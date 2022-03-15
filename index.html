@@ -18,6 +18,7 @@
             #336fff,#1fe8fe); /*go backwardd*/
             background-size: 2000% 2000%;
             /* background-size: 100% 100%; */
+            touch-action: none;
         }
         #media {
             text-align: center;
@@ -75,8 +76,10 @@
         renderer.powerPreference = "high-performance";
         renderer.setClearColor(0x000000, 0); // the default
         renderer.shadowMap.enabled = true
-        renderer.gammaFactor = 2.2;
-        renderer.gammaOutput = true;
+        // renderer.gammaFactor = 2.2;
+        // renderer.gammaOutput = true;
+
+        renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.physicallyCorrectLights = true;
 
         document.body.appendChild(renderer.domElement);
@@ -158,20 +161,19 @@
         
         limiter();
 
-        console.log(Mesh.position.y + " " + Mesh.rotation.y + " " + stage+ " " + document.body.style.backgroundPosition)
+        // console.log(Mesh.p osition.y + " " + Mesh.rotation.y + " " + stage+ " " + document.body.style.backgroundPosition)
         
     }, false)
 
     let touchPos;
     let moving = false;
     let lastscollY;
-    window.addEventListener("touchend", (evt) => {
-        // evt.preventDefault();
+    window.addEventListener("touchend", evt => {
         moving = false;
     }, false);
 
-    window.addEventListener("touchmove", (evt) => {
-        // evt.preventDefault();
+    window.addEventListener("touchmove", evt => {
+
         var touch = evt.changedTouches[0];
         if(moving === false){
             touchPos = touch.pageY;
