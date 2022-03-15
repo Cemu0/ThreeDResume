@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My first three.js app</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: linear-gradient(-45deg,
+            #07c7f2,#15bbfd,  /*1*/
+            #ec5c47,#fff680,  /*2*/
+            #000000,#70aeed,  /*3*/
+            #ff9709,#27b8ff,  /*4*/
+            #2FA7FF,#3FCA4D, 
+            #ffffff,#D98E04,  /* ??? */
+            #10b0e6,#94c9ff, 
+            #ec5c47,#fff680, 
+            #868686,#ffffff, 
+            #336fff,#1fe8fe); /*go backwardd*/
+            background-size: 2000% 2000%;
+            /* background-size: 100% 100%; */
+        }
+        #media {
+            text-align: center;
+            line-height: 2em;
+            font-size: 1.6em;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 255;
+            margin: 0 auto;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id = "media">
+    <a href="https://cemu0.github.io/">cemu0.github.io</a>
+    <p>This was ugly cloned from </p>
+    <a href="https://resume.enricmor.eu/">https://resume.enricmor.eu/</a>
+</div>
+
+
+
+<!-- Three.js library -->
+<!-- <script src="https://threejs.org/build/three.min.js"></script> -->
+<script src="https://threejs.org/build/three.min.js"></script>
+<!-- GLTFLoader.js source -->
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+    let renderer;
+    // let container;
+    // const renderer = new THREE.WebGLRenderer();
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+    const scene = new THREE.Scene();
+    const material = new THREE.MeshStandardMaterial({color: 0xFF6347})
+    let Mesh;
+    let light;
+
+    function init() {
+        // scene.background = new THREE.Color('#0aa9e0');
+        camera.position.set(0, 10, 20);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
+        renderer.stencil = true;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if(window.devicePixelRatio < 2){
+            renderer.setPixelRatio(window.devicePixelRatio);
+        }else{
+            renderer.setPixelRatio(2);
+        }
+        renderer.shadowMapSoft = true;
+        renderer.powerPreference = "high-performance";
+        renderer.setClearColor(0x000000, 0); // the default
+        renderer.shadowMap.enabled = true
+        renderer.gammaFactor = 2.2;
+        renderer.gammaOutput = true;
+        renderer.physicallyCorrectLights = true;
+
+        document.body.appendChild(renderer.domElement);
+
+        // renderer.setSize(window.innerWidth, window.innerHeight);
+        // document.body.appendChild(renderer.domElement);
+    }
+
+    function setLight() {
+
+        //combine multiple light
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, .7);
+        const hemiLight = new THREE.HemisphereLight('white', 'orange', .5);
+
+        const dir1 = new THREE.DirectionalLight('white', 1);
+        dir1.position.set(10, 10, 10);
+
+        // Shadow light
+        const shadow1 = new THREE.DirectionalLight('white', 1.5);
+        shadow1.position.set(5, 9, 0);
+
+        shadow1.shadow.mapSize.width = 2048;
+        shadow1.shadow.mapSize.height = 2048;
+        shadow1.shadow.camera.near = 3;
+        shadow1.shadow.camera.far = 500;
+
+        shadow1.shadow.camera.top = 250;
+        shadow1.shadow.camera.bottom = -250;
+        shadow1.shadow.camera.left = 250;
+        shadow1.shadow.camera.right = -250;
+
+
+        scene.add(ambientLight);
+        scene.add(hemiLight);
+        scene.add(dir1);
+        scene.add(shadow1);
+    }
+
+    function loadGLTF() {
+        let balloonLoader = new THREE.GLTFLoader();
+
+        balloonLoader.load('./model/model.glb', (gltf) => {
+            Mesh = gltf.scene;
+            let scale = 0.004;
+            Mesh.scale.set(scale,scale,scale);
+            // Mesh.material = material;
+            scene.add(Mesh);
+            //end pos
+            // Mesh.position.x = -1;
+            Mesh.position.y = -17.6;
+
+
+            Mesh.position.z = 16.8;
+            // Mesh.rotation.y = 1.6;
+        });
+    }
+
+    const obset_top = - 17.52;
+
+    let scrollY = obset_top;
+    let stage;
+    let tg_stage = 0;
+
+    function limiter () {
+        //top limit 
+        if(scrollY < -0.4999999694824204  + obset_top)
+            scrollY = -0.4999999694824204 + obset_top;
+
+        if(scrollY > 26.30 + obset_top)
+            scrollY = 26.30 + obset_top;
+    }
+
+    window.addEventListener('wheel', (event) =>
+    {
+        event.preventDefault();
+
+        scrollY += event.deltaY*0.0007;
+        
+        limiter();
+
+        console.log(Mesh.position.y + " " + Mesh.rotation.y + " " + stage+ " " + document.body.style.backgroundPosition)
+        
+    }, false)
+
+    let touchPos;
+    let moving = false;
+    let lastscollY;
+    window.addEventListener("touchend", (evt) => {
+        // evt.preventDefault();
+        moving = false;
+    }, false);
+
+    window.addEventListener("touchmove", (evt) => {
+        // evt.preventDefault();
+        var touch = evt.changedTouches[0];
+        if(moving === false){
+            touchPos = touch.pageY;
+            lastscollY = scrollY;
+            moving = true;
+        }
+        
+        scrollY = lastscollY + (touchPos -  touch.pageY) / 300;
+        limiter();
+    }, false);
+    
+
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (Mesh && Mesh.rotation) {
+            // Mesh.rotation.y += 0.005;
+            // 8.746665069580036  + 17.42
+            // scrollY
+            let ratio =  0.8/Math.abs(scrollY - Mesh.position.y)
+
+            Mesh.position.y = (Mesh.position.y * ratio + scrollY )/(ratio + 1.0);
+            // (-17.403333334350588 - -14.253333477783202)
+
+            Mesh.rotation.y = ( Math.PI / -2.94 ) * Mesh.position.y -  Math.PI /2;
+            let tmpstg = Math.abs((Mesh.rotation.y) / (Math.PI) - 5.53)
+            stage = Math.round(tmpstg);
+            
+            // if(tmpstg - stage < 0.1 && tmpstg - stage > 0.01){
+            //     scrollY -= 0.01;
+            //     console.log(tmpstg + " " + (tmpstg - stage) + " " + Mesh.position.y)
+            // } 
+            //change background depend on stage
+
+            tg_stage = (Math.abs(tg_stage*15.0 + stage) / 16.0)
+
+            let tg_st = tg_stage
+            // if(tg_st == 0)
+            //     tg_st -=  0.1
+
+            if(tg_st > 4)
+                tg_st += 0.5
+
+            document.body.style.backgroundPosition = `${(tg_st < 1)?98:95 - tg_st*10.0}% ${100 - tg_st*10.0}%`;
+
+            if(tmpstg > 9)
+                document.getElementById('media').style.display = 'inline-block';
+            else 
+                document.getElementById('media').style.display = 'none';
+            // else
+            //     document.getElementsByClassName('media').style.visibility = 'hidden';
+        }
+        renderer.render(scene, camera);
+    }
+
+    
+    init();
+    setLight();
+    loadGLTF();
+    animate();
+
+
+</script>
+</body>
+</html>
